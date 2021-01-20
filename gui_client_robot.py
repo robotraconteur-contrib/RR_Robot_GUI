@@ -9,8 +9,7 @@ from importlib import import_module
 sys.path.append('toolbox')
 from vel_emulate_sub import EmulatedVelocityControl
 from general_robotics_toolbox import *    
-#load eef orientatin
-R_ee = import_module('R_'+robot_name)
+
 
 def normalize_dq(q):
 	q[:-1]=q[:-1]/(np.linalg.norm(q[:-1])) 
@@ -23,6 +22,8 @@ parser.add_argument("--robot-name",type=str)
 args, _ = parser.parse_known_args()
 robot_name=args.robot_name
 
+#load eef orientatin
+R_ee = import_module('R_'+robot_name)
 
 #auto discovery for robot service
 time.sleep(2)
