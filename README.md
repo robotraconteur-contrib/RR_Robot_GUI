@@ -4,6 +4,7 @@
 ## Prerequisite:
 * python2/python3 (`python` for python2, `python3` for python3, be aware of which one you're using)
 * [qpsolvers](https://pypi.org/project/qpsolvers/) (`pip/pip3 install qpsolvers`)
+* [importlib](https://pypi.org/project/importlib/) (`pip/pip3 install importlib`)
 * [Robot Raconteur](https://github.com/robotraconteur/robotraconteur/wiki/Download) (Follow instruction to download, depending on different OS)
 
 ## Instructions:
