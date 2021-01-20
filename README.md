@@ -4,8 +4,11 @@
 ## Prerequisite:
 * python2/python3 (`python` for python2, `python3` for python3, be aware of which one you're using)
 * [qpsolvers](https://pypi.org/project/qpsolvers/) (`pip/pip3 install qpsolvers`)
+* [numpy](https://pypi.org/project/numpy/) (`pip/pip3 install numpy`)
 * [importlib](https://pypi.org/project/importlib/) (`pip/pip3 install importlib`)
 * [Robot Raconteur](https://github.com/robotraconteur/robotraconteur/wiki/Download) (Follow instruction to download, depending on different OS)
+* [RPI Robotics Toolbox](https://github.com/rpiRobotics/general-robotics-toolbox/tree/master/Python) (already included under `/toolbox`)
+
 
 ## Instructions:
 Start RR robot service, and make sure it's exposed to the network (checking by [RR Service Browser](https://github.com/robotraconteur/RobotRaconteur_ServiceBrowser))
