@@ -16,7 +16,7 @@ def normalize_dq(q):
 	return q   
 
 
-#Accept the names of the webcams and the nodename from command line
+#Accept the names of the robots from command line
 parser = argparse.ArgumentParser(description="RR plug and play client")
 parser.add_argument("--robot-name",type=str)
 args, _ = parser.parse_known_args()
