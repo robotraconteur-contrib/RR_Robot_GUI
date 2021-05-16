@@ -81,8 +81,6 @@ vel_ctrl = EmulatedVelocityControl(robot,state_w, cmd_w)
 #enable velocity mode
 vel_ctrl.enable_velocity_mode()
 
-#parameter setup
-n= len(robot.robot_info.joint_info)
 
 top=Tk()
 top.title(robot_name)
@@ -121,6 +119,7 @@ def move(n, robot_def,vel_ctrl,vd):
 		R_cur = robot_pose.R
 		ER=np.dot(R_cur,np.transpose(R_ee.R_ee(0)))
 		k,theta = R2rot(ER)
+		k=np.array(k)
 		s=np.sin(theta/2)*k         #eR2
 		wd=-np.dot(KR,s)  
 		f=-np.dot(np.transpose(Jp),vd)-w*np.dot(np.transpose(JR),wd)
