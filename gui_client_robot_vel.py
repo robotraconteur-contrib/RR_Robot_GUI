@@ -1,0 +1,193 @@
+#!/usr/bin/python3
+from RobotRaconteur.Client import *
+import sys, os, time, argparse, traceback
+from tkinter import *
+from tkinter import messagebox
+from qpsolvers import solve_qp
+import numpy as np
+from importlib import import_module
+sys.path.append('toolbox')
+from general_robotics_toolbox import *    
+
+
+def normalize_dq(q):
+	q[:-1]=q[:-1]/(np.linalg.norm(q[:-1])) 
+	return q   
+
+
+#Accept the names of the robots from command line
+parser = argparse.ArgumentParser(description="RR plug and play client")
+parser.add_argument("--robot-name",type=str)
+args, _ = parser.parse_known_args()
+robot_name=args.robot_name
+
+#load eef orientatin
+R_ee = import_module('R_'+robot_name)
+
+#auto discovery for robot service
+time.sleep(2)
+res=RRN.FindServiceByType("com.robotraconteur.robotics.robot.Robot",
+["rr+local","rr+tcp","rrs+tcp"])
+url=None
+for serviceinfo2 in res:
+	if robot_name in serviceinfo2.NodeName:
+		url=serviceinfo2.ConnectionURL
+		break
+if url==None:
+	print('service not found')
+	sys.exit()
+
+#auto discovery for robot tool service
+res=RRN.FindServiceByType("com.robotraconteur.robotics.tool.Tool",
+["rr+local","rr+tcp","rrs+tcp"])
+url_gripper=None
+for serviceinfo2 in res:
+	if robot_name in serviceinfo2.NodeName:
+		url_gripper=serviceinfo2.ConnectionURL
+		break
+if url_gripper==None:
+	print('gripper service not found')
+else:
+	#connect
+	try:
+		tool=RRN.ConnectService(url_gripper)
+	except:
+		traceback.print_exc()
+
+#connect robot services
+robot_sub=RRN.SubscribeService(url)
+robot=robot_sub.GetDefaultClientWait(1)
+state_w = robot_sub.SubscribeWire("robot_state")
+#get params of robots
+num_joints=len(robot.robot_info.joint_info)
+P=np.array(robot.robot_info.chains[0].P.tolist())
+length=np.linalg.norm(P[1])+np.linalg.norm(P[2])+np.linalg.norm(P[3])
+H=np.transpose(np.array(robot.robot_info.chains[0].H.tolist()))
+robot_def=Robot(H,np.transpose(P),np.zeros(num_joints))
+
+
+##########Initialize robot constants
+robot_const = RRN.GetConstants("com.robotraconteur.robotics.robot", robot)
+state_flags_enum = robot_const['RobotStateFlags']
+halt_mode = robot_const["RobotCommandMode"]["halt"]
+jog_mode = robot_const["RobotCommandMode"]["jog"]
+position_mode = robot_const["RobotCommandMode"]["position_command"]
+robot.command_mode = halt_mode
+time.sleep(0.1)
+robot.command_mode = jog_mode
+cmd_w = robot_sub.SubscribeWire("position_command")
+
+
+top=Tk()
+top.title(robot_name)
+jobid = None
+def gripper_ctrl(tool):
+
+	if gripper.config('relief')[-1] == 'sunken':
+		tool.open()
+		gripper.config(relief="raised")
+		gripper.configure(bg='red')
+		gripper.configure(text='gripper off')
+
+	else:
+		tool.close()
+		gripper.config(relief="sunken")
+		gripper.configure(bg='green')
+		gripper.configure(text='gripper on')
+	return
+
+def move(n, robot_def,vd):
+	global jobid
+	try:
+		w=0.2
+		Kq=.01*np.eye(n)    #small value to make sure positive definite
+		KR=np.eye(3)        #gains for position and orientation error
+
+		q_cur=state_w.InValue.joint_position
+		J=robotjacobian(robot_def,q_cur)        #calculate current Jacobian
+		Jp=J[3:,:]
+		JR=J[:3,:] 
+		H=np.dot(np.transpose(Jp),Jp)+Kq+w*np.dot(np.transpose(JR),JR)
+
+		H=(H+np.transpose(H))/2
+
+		robot_pose=fwdkin(robot_def,q_cur.reshape((n,1)))
+		R_cur = robot_pose.R
+		ER=np.dot(R_cur,np.transpose(R_ee.R_ee(0)))
+		k,theta = R2rot(ER)
+		k=np.array(k)
+		s=np.sin(theta/2)*k         #eR2
+		wd=-np.dot(KR,s)  
+		f=-np.dot(np.transpose(Jp),vd)-w*np.dot(np.transpose(JR),wd)
+		qdot=0.5*normalize_dq(solve_qp(H, f))
+		robot.jog_joint(qdot,1,True)
+		jobid = top.after(10, lambda: move(n, robot_def,vd))
+	except:
+		traceback.print_exc()
+	return
+
+def stop(n):
+	global jobid
+	top.after_cancel(jobid)
+	return
+
+##RR part
+def update_label():
+	robot_state=state_w.TryGetInValue()
+	flags_text = "Robot State Flags:\n\n"
+	if robot_state[0]:
+		for flag_name, flag_code in state_flags_enum.items():
+			if flag_code & robot_state[1].robot_state_flags != 0:
+				flags_text += flag_name + "\n"
+	else:
+		flags_text += 'service not running'
+		
+	joint_text = "Robot Joint Positions:\n\n"
+	for j in robot_state[1].joint_position:
+		joint_text += "%.2f\n" % np.rad2deg(j)
+
+	label.config(text = flags_text + "\n\n" + joint_text)
+
+	label.after(250, update_label)
+
+top.title = "Robot State"
+
+label = Label(top, fg = "black", justify=LEFT)
+label.pack()
+label.after(250,update_label)
+
+
+left=Button(top,text='left')
+right=Button(top,text='right')
+forward=Button(top,text='forward')
+backward=Button(top,text='backward')
+up=Button(top,text='up')
+down=Button(top,text='down')
+gripper=Button(top,text='gripper off',command=lambda: gripper_ctrl(tool),bg='red')
+
+left.bind('<ButtonPress-1>', lambda event: move(num_joints,robot_def,[0,.1,0]))
+right.bind('<ButtonPress-1>', lambda event: move(num_joints,robot_def,[0,-.1,0]))
+forward.bind('<ButtonPress-1>', lambda event: move(num_joints,robot_def,[.1,0,0]))
+backward.bind('<ButtonPress-1>', lambda event: move(num_joints,robot_def,[-.1,0,0]))
+up.bind('<ButtonPress-1>', lambda event: move(num_joints,robot_def,[0,0,.1]))
+down.bind('<ButtonPress-1>', lambda event: move(num_joints,robot_def,[0,0,-.1]))
+
+
+left.bind('<ButtonRelease-1>', lambda event: stop(num_joints))
+right.bind('<ButtonRelease-1>', lambda event: stop(num_joints))
+forward.bind('<ButtonRelease-1>', lambda event: stop(num_joints))
+backward.bind('<ButtonRelease-1>', lambda event: stop(num_joints))
+up.bind('<ButtonRelease-1>', lambda event: stop(num_joints))
+down.bind('<ButtonRelease-1>', lambda event: stop(num_joints))
+
+
+left.pack()
+right.pack()
+forward.pack()
+backward.pack()
+up.pack()
+down.pack()
+gripper.pack()
+
+
+top.mainloop()
