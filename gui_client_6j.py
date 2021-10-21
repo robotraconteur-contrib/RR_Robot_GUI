@@ -108,7 +108,12 @@ def gripper_ctrl(tool):
 
 def movej(qdot):
 	global jobid
-	vel_ctrl.set_velocity_command(qdot)
+
+	if np.max(np.abs(speed.get()*qdot))>1.0:
+		qdot=np.zeros(6)
+		print('too fast')
+
+	vel_ctrl.set_velocity_command(speed.get()*qdot)
 	jobid = top.after(10, lambda: movej(qdot))
 	return
 
@@ -135,11 +140,10 @@ def move(vd, ER):
 		wd=-np.dot(KR,s)  
 		f=-np.dot(np.transpose(Jp),vd)-w*np.dot(np.transpose(JR),wd)
 		###Don't put bound here, will affect cartesian motion outcome
-		qdot=solve_qp(H, f)
+		qdot=speed.get()*solve_qp(H, f)
 		###For safty, make sure robot not moving too fast
-		if np.max(np.abs(qdot))>0.5:
+		if np.max(np.abs(qdot))>1.0:
 			qdot=np.zeros(6)
-			stop=True
 			print('too fast')
 		vel_ctrl.set_velocity_command(qdot)
 
@@ -175,9 +179,16 @@ def update_label():
 
 top.title = "Robot State"
 
+###speed control
+speed= Scale(orient='vertical', label='speed control',from_=1., length=500,resolution=0.1, to=10.)
+speed.pack(side=RIGHT)
+
+
 label = Label(top, fg = "black", justify=LEFT)
 label.pack()
 label.after(250,update_label)
+
+
 
 
 left=Button(top,text='left')
@@ -211,12 +222,12 @@ j6_p=Button(top,text='j6_p')
 
 gripper=Button(top,text='gripper off',command=lambda: gripper_ctrl(tool),bg='red')
 
-left.bind('<ButtonPress-1>', lambda event: move([0,.05,0],np.eye(3)))
-right.bind('<ButtonPress-1>', lambda event: move([0,-.05,0],np.eye(3)))
-forward.bind('<ButtonPress-1>', lambda event: move([.05,0,0],np.eye(3)))
-backward.bind('<ButtonPress-1>', lambda event: move([-.05,0,0],np.eye(3)))
-up.bind('<ButtonPress-1>', lambda event: move([0,0,.05],np.eye(3)))
-down.bind('<ButtonPress-1>', lambda event: move([0,0,-.05],np.eye(3)))
+left.bind('<ButtonPress-1>', lambda event: move([0,.02,0],np.eye(3)))
+right.bind('<ButtonPress-1>', lambda event: move([0,-.02,0],np.eye(3)))
+forward.bind('<ButtonPress-1>', lambda event: move([.02,0,0],np.eye(3)))
+backward.bind('<ButtonPress-1>', lambda event: move([-.02,0,0],np.eye(3)))
+up.bind('<ButtonPress-1>', lambda event: move([0,0,.02],np.eye(3)))
+down.bind('<ButtonPress-1>', lambda event: move([0,0,-.02],np.eye(3)))
 
 Rx_n.bind('<ButtonPress-1>', lambda event: move([0.,0.,0.],Rx(+0.1)))
 Rx_p.bind('<ButtonPress-1>', lambda event: move([0.,0.,0.],Rx(-0.1)))
