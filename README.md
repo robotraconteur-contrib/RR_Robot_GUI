@@ -1,6 +1,11 @@
 # Robot Raconteur (RR) Simple Robot Client
-![](images/gui.png)
 
+This will display the three images side by side if the images are not too wide.
+
+<p float="left">
+  <img src="/images/gui.png" width="150" />
+  <img src="/images/gui2.png" width="800" /> 
+</p>
 ## Prerequisite:
 * python2/python3 (`python` for python2, `python3` for python3, be aware of which one you're using)
 * [qpsolvers](https://pypi.org/project/qpsolvers/) (`pip/pip3 install qpsolvers`)
