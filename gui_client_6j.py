@@ -220,12 +220,12 @@ j6_p=Button(top,text='j6_p')
 
 gripper=Button(top,text='gripper off',command=lambda: gripper_ctrl(tool),bg='red')
 
-left.bind('<ButtonPress-1>', lambda event: move([0,.02,0],np.eye(3)))
-right.bind('<ButtonPress-1>', lambda event: move([0,-.02,0],np.eye(3)))
-forward.bind('<ButtonPress-1>', lambda event: move([.02,0,0],np.eye(3)))
-backward.bind('<ButtonPress-1>', lambda event: move([-.02,0,0],np.eye(3)))
-up.bind('<ButtonPress-1>', lambda event: move([0,0,.02],np.eye(3)))
-down.bind('<ButtonPress-1>', lambda event: move([0,0,-.02],np.eye(3)))
+left.bind('<ButtonPress-1>', lambda event: move([0,20,0],np.eye(3)))
+right.bind('<ButtonPress-1>', lambda event: move([0,-20,0],np.eye(3)))
+forward.bind('<ButtonPress-1>', lambda event: move([20,0,0],np.eye(3)))
+backward.bind('<ButtonPress-1>', lambda event: move([-20,0,0],np.eye(3)))
+up.bind('<ButtonPress-1>', lambda event: move([0,0,20],np.eye(3)))
+down.bind('<ButtonPress-1>', lambda event: move([0,0,-20],np.eye(3)))
 
 Rx_n.bind('<ButtonPress-1>', lambda event: move([0.,0.,0.],Rx(+0.1)))
 Rx_p.bind('<ButtonPress-1>', lambda event: move([0.,0.,0.],Rx(-0.1)))
