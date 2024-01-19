@@ -159,7 +159,7 @@ def stop():
 ##RR part
 def update_label():
 	robot_state=state_w.TryGetInValue()
-	flags_text = "Robot State Flags:\n\n"
+	flags_text = "Robot State Flags:\n"
 	if robot_state[0]:
 		for flag_name, flag_code in state_flags_enum.items():
 			if flag_code & robot_state[1].robot_state_flags != 0:
@@ -167,16 +167,16 @@ def update_label():
 	else:
 		flags_text += 'service not running'
 		
-	joint_text = "Robot Joint Positions:\n\n"
+	joint_text = "Robot Joint Positions:\n"
 	for j in robot_state[1].joint_position:
 		joint_text += "%.2f\n" % np.rad2deg(j)
 	
-	pos_text = "Robot Position:\n\n" 
+	pos_text = "Robot Position:\n" 
 	for j in list(robot_state[1].kin_chain_tcp[0]['position']):
 		pos_text += "%.2f " % j
 
 
-	label.config(text = flags_text + "\n\n" + pos_text)
+	label.config(text = flags_text + "\n\n" + joint_text + "\n\n" + pos_text)
 
 	label.after(250, update_label)
 
