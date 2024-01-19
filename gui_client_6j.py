@@ -170,8 +170,13 @@ def update_label():
 	joint_text = "Robot Joint Positions:\n\n"
 	for j in robot_state[1].joint_position:
 		joint_text += "%.2f\n" % np.rad2deg(j)
+	
+	pos_text = "Robot Position:\n\n" 
+	for j in list(robot_state[1].kin_chain_tcp[0]['position']):
+		pos_text += "%.2f " % j
 
-	label.config(text = flags_text + "\n\n" + joint_text)
+
+	label.config(text = flags_text + "\n\n" + pos_text)
 
 	label.after(250, update_label)
 
